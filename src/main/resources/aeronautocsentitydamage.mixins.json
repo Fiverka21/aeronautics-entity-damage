@@ -1,0 +1,8 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "aero.damage",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": ["ContraptionEntityDamage"],
+  "injectors": {"defaultRequire": 1}
+}
