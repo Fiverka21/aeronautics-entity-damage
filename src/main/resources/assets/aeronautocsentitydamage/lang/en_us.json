@@ -1,5 +1,4 @@
 {
-  "itemGroup.aeronautocsentitydamage": "Aeronautics Entity Damage",
   "aeronautocsentitydamage.configuration.title": "Aeronautics Entity Damage Config",
   "aeronautocsentitydamage.configuration.section.aeronautocsentitydamage.common.toml": "Collision Damage",
   "aeronautocsentitydamage.configuration.section.aeronautocsentitydamage.common.toml.title": "Collision Damage",
@@ -8,6 +7,5 @@
   "aeronautocsentitydamage.configuration.massReference": "Mass reference",
   "aeronautocsentitydamage.configuration.speedReference": "Speed reference",
   "aeronautocsentitydamage.configuration.minimumSpeed": "Minimum impact speed",
-  "aeronautocsentitydamage.configuration.maximumDamage": "Maximum damage",
-  "aeronautocsentitydamage.configuration.hitCooldownTicks": "Hit cooldown"
+  "aeronautocsentitydamage.configuration.maximumDamage": "Maximum damage"
 }

@@ -120,6 +120,12 @@ dependencies {
     compileOnly("com.simibubi.create:create-${minecraft_version}:${create_version}:slim") {
         transitive = false
     }
+    compileOnly("dev.ryanhcode.sable:sable-neoforge-${minecraft_version}:${sable_version}") {
+        transitive = false
+    }
+    compileOnly("dev.ryanhcode.sable-companion:sable-companion-common-${minecraft_version}:${sable_companion_version}") {
+        transitive = false
+    }
     compileOnly("io.github.llamalad7:mixinextras-neoforge:0.4.1")
 
     // Example optional mod dependency with JEI

@@ -46,12 +46,8 @@ authors="Fiverka"
 
 # The description text for the mod (multi line!) (#mandatory)
 description='''
-Adds mass- and speed-scaled damage when Create Aeronautics contraptions hit mobs or players.
+Adds mass- and speed-scaled damage when Create Aeronautics sublevels crash into mobs or players.
 '''
-
-# The [[mixins]] block allows you to declare your mixin config to FML so that it gets loaded.
-[[mixins]]
-config="${mod_id}.mixins.json"
 
 # The [[accessTransformers]] block allows you to declare where your AT file is.
 # If this block is omitted, a fallback attempt will be made to load an AT from META-INF/accesstransformer.cfg
@@ -97,6 +93,13 @@ config="${mod_id}.mixins.json"
     modId="create"
     type="required"
     versionRange="[6.0.0,)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="sable"
+    type="required"
+    versionRange="[2.0.0,3.0.0)"
     ordering="AFTER"
     side="BOTH"
 

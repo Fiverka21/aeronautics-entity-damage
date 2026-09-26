@@ -8,11 +8,11 @@ public class Config {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
     public static final ModConfigSpec.BooleanValue ENABLED = BUILDER
-            .comment("Enable damage from moving Create/Aeronautics contraptions.")
+            .comment("Enable damage from moving Sable sublevels.")
             .define("enabled", true);
 
     public static final ModConfigSpec.DoubleValue DAMAGE_MULTIPLIER = BUILDER
-            .comment("Damage multiplier; damage scales with mass and the square of impact speed.")
+            .comment("Damage multiplier; damage scales with sublevel mass and the square of impact speed.")
             .defineInRange("damageMultiplier", 1.0D, 0.0D, 100.0D);
 
     public static final ModConfigSpec.DoubleValue MASS_REFERENCE = BUILDER
@@ -24,16 +24,12 @@ public class Config {
             .defineInRange("speedReference", 10.0D, 0.001D, Double.MAX_VALUE);
 
     public static final ModConfigSpec.DoubleValue MINIMUM_SPEED = BUILDER
-            .comment("Minimum impact speed in blocks per second before damage is applied.")
-            .defineInRange("minimumSpeed", 2.0D, 0.0D, Double.MAX_VALUE);
+            .comment("Minimum movement speed in blocks per second before damage is applied.")
+            .defineInRange("minimumSpeed", 0.05D, 0.0D, Double.MAX_VALUE);
 
     public static final ModConfigSpec.DoubleValue MAXIMUM_DAMAGE = BUILDER
-            .comment("Maximum damage dealt by one contraption impact.")
+            .comment("Maximum damage dealt by one sublevel impact.")
             .defineInRange("maximumDamage", 40.0D, 0.0D, Double.MAX_VALUE);
-
-    public static final ModConfigSpec.IntValue HIT_COOLDOWN_TICKS = BUILDER
-            .comment("Ticks before the same ship can damage the same target again.")
-            .defineInRange("hitCooldownTicks", 10, 0, Integer.MAX_VALUE);
 
     static final ModConfigSpec SPEC = BUILDER.build();
 
