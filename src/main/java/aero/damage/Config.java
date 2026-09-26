@@ -23,6 +23,10 @@ public class Config {
             .comment("Impact speed in blocks per second that represents one speed unit.")
             .defineInRange("speedReference", 10.0D, 0.001D, Double.MAX_VALUE);
 
+    public static final ModConfigSpec.DoubleValue SPEED_DAMAGE_EXPONENT = BUILDER
+            .comment("Controls how sharply damage scales with impact speed; 1 is linear and 2 is quadratic.")
+            .defineInRange("speedDamageExponent", 2.0D, 0.0D, 10.0D);
+
     public static final ModConfigSpec.DoubleValue MINIMUM_SPEED = BUILDER
             .comment("Minimum movement speed in blocks per second before damage is applied.")
             .defineInRange("minimumSpeed", 0.05D, 0.0D, Double.MAX_VALUE);

@@ -4,9 +4,9 @@ NeoForge 1.21.1 addon for Create Aeronautics. Moving Sable physics sublevels dam
 
 Damage is calculated from the sublevel’s Sable mass and impact speed:
 
-`damage = damageMultiplier × (mass / massReference) × (speed / speedReference)²`
+`damage = damageMultiplier × (mass / massReference) × (speed / speedReference)^speedDamageExponent`
 
-The mod runs its own server-side swept-bounds collision check after each Sable physics step. The defaults use 1,000 kpg and 10 blocks/second as reference values, require at least 0.05 blocks/second of relative impact speed, and cap a hit at 40 damage. A mob is damaged once when a contraption first touches it, and can be damaged again after separating and touching it again.
+The mod runs its own server-side swept-bounds collision check after each Sable physics step. The defaults use 1,000 kpg and 10 blocks/second as reference values, use quadratic speed scaling (`speedDamageExponent = 2`), require at least 0.05 blocks/second of relative impact speed, and cap a hit at 40 damage. Set the exponent to `1` for linear scaling. A mob is damaged once when a contraption first touches it, and can be damaged again after separating and touching it again.
 
 All values are configurable in the common NeoForge config at `config/aeronautocsentitydamage-common.toml`.
 

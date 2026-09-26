@@ -181,8 +181,9 @@ public final class CollisionDamageHandler {
 
         final double massFactor = mass / Config.MASS_REFERENCE.get();
         final double speedFactor = speed / Config.SPEED_REFERENCE.get();
+        final double scaledSpeedFactor = Math.pow(speedFactor, Config.SPEED_DAMAGE_EXPONENT.get());
         final float damage = (float) Math.min(Config.MAXIMUM_DAMAGE.get(),
-                Config.DAMAGE_MULTIPLIER.get() * massFactor * speedFactor * speedFactor);
+                Config.DAMAGE_MULTIPLIER.get() * massFactor * scaledSpeedFactor);
         if (damage <= 0.0F) {
             return;
         }

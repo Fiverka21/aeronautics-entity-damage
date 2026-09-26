@@ -6,6 +6,7 @@
   "aeronautocsentitydamage.configuration.damageMultiplier": "Damage multiplier",
   "aeronautocsentitydamage.configuration.massReference": "Mass reference",
   "aeronautocsentitydamage.configuration.speedReference": "Speed reference",
+  "aeronautocsentitydamage.configuration.speedDamageExponent": "Speed damage scaling",
   "aeronautocsentitydamage.configuration.minimumSpeed": "Minimum impact speed",
   "aeronautocsentitydamage.configuration.maximumDamage": "Maximum damage"
 }
