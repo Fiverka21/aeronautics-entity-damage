@@ -28,7 +28,7 @@ public class Config {
             .defineInRange("speedDamageExponent", 2.0D, 0.0D, 10.0D);
 
     public static final ModConfigSpec.DoubleValue MINIMUM_SPEED = BUILDER
-            .comment("Minimum movement speed in blocks per second before damage is applied.")
+            .comment("Minimum sublevel movement speed in blocks per second before damage is applied.")
             .defineInRange("minimumSpeed", 0.05D, 0.0D, Double.MAX_VALUE);
 
     public static final ModConfigSpec.DoubleValue MAXIMUM_DAMAGE = BUILDER

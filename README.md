@@ -56,7 +56,7 @@ config/aeronautocsentitydamage-common.toml
 | `massReference` | `1000.0` | Reference sublevel mass in kpg. |
 | `speedReference` | `10.0` | Reference impact speed in blocks per second. |
 | `speedDamageExponent` | `2.0` | Controls how sharply damage scales with impact speed. |
-| `minimumSpeed` | `0.05` | Minimum relative speed required to deal damage. |
+| `minimumSpeed` | `0.05` | Minimum sublevel movement speed required to deal damage. |
 | `maximumDamage` | `40.0` | Maximum damage from one impact. |
 
 ## Dependencies
