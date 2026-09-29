@@ -112,10 +112,6 @@ public final class CollisionDamageHandler {
 
         final AABB searchBounds = sweptBounds.inflate(0.1D);
         final Vec3 observedVelocity = observedVelocity(previousBounds, currentBounds, timeStep);
-        final Vec3 latestLinearVelocity = new Vec3(
-                subLevel.latestLinearVelocity.x,
-                subLevel.latestLinearVelocity.y,
-                subLevel.latestLinearVelocity.z);
         for (final LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, searchBounds,
                 entity -> entity.isAlive() && !entity.isSpectator())) {
             if (Sable.HELPER.getTrackingSubLevel(target) == subLevel) {
@@ -147,19 +143,19 @@ public final class CollisionDamageHandler {
             final Vec3 sourceVelocity = sourceVelocityAt(subLevel, target.getBoundingBox().getCenter());
             final double sourceMovementSpeed = Math.max(
                     sourceVelocity.length(),
-                    Math.max(observedVelocity.length(), latestLinearVelocity.length()));
+                    observedVelocity.length());
             // Relative velocity alone is not enough to identify a contraption impact: a target
             // walking or falling into a stationary contraption would otherwise deal damage.
             // Keep the contact active above, but only damage when the sublevel itself moved.
-            if (sourceMovementSpeed < Config.MINIMUM_SPEED.get()) {
+            if (!Double.isFinite(sourceMovementSpeed)
+                    || sourceMovementSpeed < Config.MINIMUM_SPEED.get()) {
                 continue;
             }
 
             final Vec3 targetVelocity = target.getDeltaMovement().scale(20.0D);
             final double impactSpeed = Math.max(
                     sourceVelocity.subtract(targetVelocity).length(),
-                    Math.max(observedVelocity.subtract(targetVelocity).length(),
-                            latestLinearVelocity.subtract(targetVelocity).length()));
+                    observedVelocity.subtract(targetVelocity).length());
             applyDamage(level, target, impactSpeed, mass);
         }
     }
@@ -336,16 +332,24 @@ public final class CollisionDamageHandler {
                                     final LivingEntity target,
                                     final double speed,
                                     final double mass) {
-        if (speed < Config.MINIMUM_SPEED.get()) {
+        if (!Double.isFinite(speed)
+                || !Double.isFinite(mass)
+                || speed < Config.MINIMUM_SPEED.get()
+                || mass <= 0.0D) {
             return;
         }
 
         final double massFactor = mass / Config.MASS_REFERENCE.get();
         final double speedFactor = speed / Config.SPEED_REFERENCE.get();
         final double scaledSpeedFactor = Math.pow(speedFactor, Config.SPEED_DAMAGE_EXPONENT.get());
-        final float damage = (float) Math.min(Config.MAXIMUM_DAMAGE.get(),
+        final double calculatedDamage = Math.min(Config.MAXIMUM_DAMAGE.get(),
                 Config.DAMAGE_MULTIPLIER.get() * massFactor * scaledSpeedFactor);
-        if (damage <= 0.0F) {
+        if (!Double.isFinite(calculatedDamage) || calculatedDamage <= 0.0D) {
+            return;
+        }
+
+        final float damage = (float) calculatedDamage;
+        if (!Float.isFinite(damage) || damage <= 0.0F) {
             return;
         }
 
