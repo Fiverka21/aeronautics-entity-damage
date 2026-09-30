@@ -344,7 +344,7 @@ public final class CollisionDamageHandler {
         final double scaledSpeedFactor = Math.pow(speedFactor, Config.SPEED_DAMAGE_EXPONENT.get());
         final double calculatedDamage = Math.min(Config.MAXIMUM_DAMAGE.get(),
                 Config.DAMAGE_MULTIPLIER.get() * massFactor * scaledSpeedFactor);
-        if (!Double.isFinite(calculatedDamage) || calculatedDamage <= 0.0D) {
+        if (!Double.isFinite(calculatedDamage) || calculatedDamage < 0.5D) {
             return;
         }
 

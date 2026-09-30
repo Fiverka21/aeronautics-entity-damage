@@ -39,7 +39,7 @@ The default `speedDamageExponent` is `2`, so speed uses quadratic scaling. For e
 - `2.0` gives quadratic speed scaling.
 - `3.0` makes high-speed impacts scale much more sharply.
 
-Damage is limited by `maximumDamage`, and impacts below `minimumSpeed` do not deal damage.
+Damage is limited by `maximumDamage`, and impacts below `minimumSpeed` do not deal damage. Calculated damage below `0.5` HP is also ignored.
 
 ## Configuration
 
