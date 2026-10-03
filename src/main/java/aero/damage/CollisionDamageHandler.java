@@ -75,18 +75,26 @@ public final class CollisionDamageHandler {
 
             final BoundsKey boundsKey = new BoundsKey(subLevelId, level.dimension());
             activeSublevels.add(boundsKey);
+            final MassData massData = subLevel.getMassTracker();
+            final double mass = massData == null ? 0.0D : massData.getMass();
+            if (mass <= 0.0D) {
+                LAST_BOUNDS.put(boundsKey, worldBounds(subLevel));
+                continue;
+            }
             final AABB currentBounds = worldBounds(subLevel);
             final AABB previousBounds = LAST_BOUNDS.put(boundsKey, currentBounds);
             final AABB sweptBounds = previousBounds == null
                     ? currentBounds
                     : union(previousBounds, currentBounds);
+            final List<LivingEntity> targets = findTargets(level, subLevel, sweptBounds);
+            if (targets.isEmpty()) {
+                continue;
+            }
 
-            final List<AABB> collisionShapes = worldCollisionShapes(subLevel, subLevel.logicalPose());
-            final List<AABB> previousCollisionShapes = previousBounds == null
-                    ? collisionShapes
-                    : worldCollisionShapes(subLevel, subLevel.lastPose());
-            checkEntities(level, subLevel, previousBounds, currentBounds, previousCollisionShapes,
-                    collisionShapes, sweptBounds, timeStep, activeContacts);
+            final CollisionShapes collisionShapes = worldCollisionShapes(subLevel, subLevel.logicalPose(),
+                    previousBounds == null ? null : subLevel.lastPose());
+            checkEntities(level, subLevel, previousBounds, currentBounds, collisionShapes.previous(),
+                    collisionShapes.current(), targets, timeStep, mass, activeContacts);
         }
 
         LAST_BOUNDS.keySet().removeIf(key -> key.dimension().equals(level.dimension())
@@ -101,23 +109,12 @@ public final class CollisionDamageHandler {
                                       final AABB currentBounds,
                                       final List<AABB> previousCollisionShapes,
                                       final List<AABB> currentCollisionShapes,
-                                      final AABB sweptBounds,
+                                      final List<LivingEntity> targets,
                                       final double timeStep,
+                                      final double mass,
                                       final Set<HitKey> activeContacts) {
-        final MassData massData = subLevel.getMassTracker();
-        final double mass = massData == null ? 0.0D : massData.getMass();
-        if (mass <= 0.0D) {
-            return;
-        }
-
-        final AABB searchBounds = sweptBounds.inflate(0.1D);
         final Vec3 observedVelocity = observedVelocity(previousBounds, currentBounds, timeStep);
-        for (final LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, searchBounds,
-                entity -> entity.isAlive() && !entity.isSpectator())) {
-            if (Sable.HELPER.getTrackingSubLevel(target) == subLevel) {
-                continue;
-            }
-
+        for (final LivingEntity target : targets) {
             // The sublevel bounds are only a broad-phase query. Test against the collision shape
             // of every non-air block so empty space inside or around a contraption cannot hit.
             if (!intersectsCollisionShapes(previousCollisionShapes, currentCollisionShapes,
@@ -160,6 +157,15 @@ public final class CollisionDamageHandler {
         }
     }
 
+    private static List<LivingEntity> findTargets(final ServerLevel level,
+                                                   final ServerSubLevel subLevel,
+                                                   final AABB sweptBounds) {
+        return level.getEntitiesOfClass(LivingEntity.class, sweptBounds.inflate(0.1D),
+                entity -> entity.isAlive()
+                        && !entity.isSpectator()
+                        && Sable.HELPER.getTrackingSubLevel(entity) != subLevel);
+    }
+
     private static Vec3 observedVelocity(final AABB previousBounds,
                                          final AABB currentBounds,
                                          final double timeStep) {
@@ -200,21 +206,20 @@ public final class CollisionDamageHandler {
     private static boolean intersectsSweptBounds(final AABB previousBounds,
                                                   final AABB currentBounds,
                                                   final AABB targetBounds) {
-        final Vec3 start = previousBounds.getCenter();
-        final Vec3 end = currentBounds.getCenter();
-        final Vec3 halfExtents = new Vec3(
-                Math.max(previousBounds.getXsize(), currentBounds.getXsize()) * 0.5D,
-                Math.max(previousBounds.getYsize(), currentBounds.getYsize()) * 0.5D,
-                Math.max(previousBounds.getZsize(), currentBounds.getZsize()) * 0.5D);
-        final AABB expandedTarget = new AABB(
-                targetBounds.minX - halfExtents.x,
-                targetBounds.minY - halfExtents.y,
-                targetBounds.minZ - halfExtents.z,
-                targetBounds.maxX + halfExtents.x,
-                targetBounds.maxY + halfExtents.y,
-                targetBounds.maxZ + halfExtents.z);
+        final double startX = (previousBounds.minX + previousBounds.maxX) * 0.5D;
+        final double startY = (previousBounds.minY + previousBounds.maxY) * 0.5D;
+        final double startZ = (previousBounds.minZ + previousBounds.maxZ) * 0.5D;
+        final double endX = (currentBounds.minX + currentBounds.maxX) * 0.5D;
+        final double endY = (currentBounds.minY + currentBounds.maxY) * 0.5D;
+        final double endZ = (currentBounds.minZ + currentBounds.maxZ) * 0.5D;
+        final double halfX = Math.max(previousBounds.getXsize(), currentBounds.getXsize()) * 0.5D;
+        final double halfY = Math.max(previousBounds.getYsize(), currentBounds.getYsize()) * 0.5D;
+        final double halfZ = Math.max(previousBounds.getZsize(), currentBounds.getZsize()) * 0.5D;
 
-        return intersectsSegment(expandedTarget, start, end);
+        return intersectsSegment(
+                targetBounds.minX - halfX, targetBounds.minY - halfY, targetBounds.minZ - halfZ,
+                targetBounds.maxX + halfX, targetBounds.maxY + halfY, targetBounds.maxZ + halfZ,
+                startX, startY, startZ, endX, endY, endZ);
     }
 
     private static boolean intersectsCollisionShapes(final List<AABB> previousShapes,
@@ -240,8 +245,11 @@ public final class CollisionDamageHandler {
         return false;
     }
 
-    private static List<AABB> worldCollisionShapes(final ServerSubLevel subLevel, final Pose3dc pose) {
-        final List<AABB> shapes = new ArrayList<>();
+    private static CollisionShapes worldCollisionShapes(final ServerSubLevel subLevel,
+                                                        final Pose3dc currentPose,
+                                                        final Pose3dc previousPose) {
+        final List<AABB> currentShapes = new ArrayList<>();
+        final List<AABB> previousShapes = previousPose == null ? currentShapes : new ArrayList<>();
         final LevelAccelerator blockGetter = new LevelAccelerator(subLevel.getLevel());
         final var bounds = subLevel.getPlot().getBoundingBox();
         final BlockPos.MutableBlockPos blockPos = new BlockPos.MutableBlockPos();
@@ -258,19 +266,21 @@ public final class CollisionDamageHandler {
                     }
 
                     final VoxelShape shape = state.getCollisionShape(blockGetter, blockPos);
-                    shape.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> shapes.add(
-                            transformShape(new AABB(blockX + minX, blockY + minY, blockZ + minZ,
-                                    blockX + maxX, blockY + maxY, blockZ + maxZ), pose)));
+                    shape.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> {
+                        final AABB localShape = new AABB(blockX + minX, blockY + minY, blockZ + minZ,
+                                blockX + maxX, blockY + maxY, blockZ + maxZ);
+                        currentShapes.add(transformShape(localShape, currentPose));
+                        if (previousPose != null) {
+                            previousShapes.add(transformShape(localShape, previousPose));
+                        }
+                    });
                 }
             }
         }
-        return shapes;
+        return new CollisionShapes(previousShapes, currentShapes);
     }
 
     private static AABB transformShape(final AABB shape, final Pose3dc pose) {
-        final double[] x = {shape.minX, shape.maxX};
-        final double[] y = {shape.minY, shape.maxY};
-        final double[] z = {shape.minZ, shape.maxZ};
         final Vector3d transformed = new Vector3d();
         double minX = Double.MAX_VALUE;
         double minY = Double.MAX_VALUE;
@@ -278,9 +288,12 @@ public final class CollisionDamageHandler {
         double maxX = -Double.MAX_VALUE;
         double maxY = -Double.MAX_VALUE;
         double maxZ = -Double.MAX_VALUE;
-        for (double px : x) {
-            for (double py : y) {
-                for (double pz : z) {
+        for (int x = 0; x < 2; x++) {
+            final double px = x == 0 ? shape.minX : shape.maxX;
+            for (int y = 0; y < 2; y++) {
+                final double py = y == 0 ? shape.minY : shape.maxY;
+                for (int z = 0; z < 2; z++) {
+                    final double pz = z == 0 ? shape.minZ : shape.maxZ;
                     pose.transformPosition(transformed.set(px, py, pz));
                     minX = Math.min(minX, transformed.x);
                     minY = Math.min(minY, transformed.y);
@@ -294,25 +307,34 @@ public final class CollisionDamageHandler {
         return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
-    private static boolean intersectsSegment(final AABB bounds, final Vec3 start, final Vec3 end) {
+    private static boolean intersectsSegment(final double minX,
+                                              final double minY,
+                                              final double minZ,
+                                              final double maxX,
+                                              final double maxY,
+                                              final double maxZ,
+                                              final double startX,
+                                              final double startY,
+                                              final double startZ,
+                                              final double endX,
+                                              final double endY,
+                                              final double endZ) {
         double minimum = 0.0D;
         double maximum = 1.0D;
-        final double[] startCoordinates = {start.x, start.y, start.z};
-        final double[] deltas = {end.x - start.x, end.y - start.y, end.z - start.z};
-        final double[] minimumCoordinates = {bounds.minX, bounds.minY, bounds.minZ};
-        final double[] maximumCoordinates = {bounds.maxX, bounds.maxY, bounds.maxZ};
-
         for (int axis = 0; axis < 3; axis++) {
-            if (Math.abs(deltas[axis]) < 1.0E-9D) {
-                if (startCoordinates[axis] < minimumCoordinates[axis]
-                        || startCoordinates[axis] > maximumCoordinates[axis]) {
+            final double startCoordinate = axis == 0 ? startX : axis == 1 ? startY : startZ;
+            final double delta = axis == 0 ? endX - startX : axis == 1 ? endY - startY : endZ - startZ;
+            final double minimumCoordinate = axis == 0 ? minX : axis == 1 ? minY : minZ;
+            final double maximumCoordinate = axis == 0 ? maxX : axis == 1 ? maxY : maxZ;
+            if (Math.abs(delta) < 1.0E-9D) {
+                if (startCoordinate < minimumCoordinate || startCoordinate > maximumCoordinate) {
                     return false;
                 }
                 continue;
             }
 
-            double entry = (minimumCoordinates[axis] - startCoordinates[axis]) / deltas[axis];
-            double exit = (maximumCoordinates[axis] - startCoordinates[axis]) / deltas[axis];
+            double entry = (minimumCoordinate - startCoordinate) / delta;
+            double exit = (maximumCoordinate - startCoordinate) / delta;
             if (entry > exit) {
                 final double swap = entry;
                 entry = exit;
@@ -360,5 +382,8 @@ public final class CollisionDamageHandler {
     }
 
     private record BoundsKey(UUID subLevelId, ResourceKey<Level> dimension) {
+    }
+
+    private record CollisionShapes(List<AABB> previous, List<AABB> current) {
     }
 }
